@@ -1,3 +1,15 @@
+// Detect normal browser vs Android WebView/App
+(function detectWebMode() {
+    const isAndroidWebView =
+        /; wv\)/i.test(navigator.userAgent) ||
+        /Version\/[\d.]+.*Chrome\/[\d.]+ Mobile/i.test(navigator.userAgent) &&
+        !window.chrome;
+
+    if (!isAndroidWebView) {
+        document.documentElement.classList.add('web-mode');
+        document.body.classList.add('web-mode');
+    }
+})();
 /* Pixabowl - clean production client
    Firebase Auth + Firestore for data/auth.
    Cloudinary unsigned upload for images only.
