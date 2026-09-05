@@ -417,3 +417,66 @@ body {
     border-color: #a872db;
     outline: none;
 }
+/* ==========================================
+   PIXABOWL RESPONSIVE WEB MODE
+   Mobile/App layout remains unchanged.
+   Web layout activates on wider screens.
+   ========================================== */
+
+@media (min-width: 700px) {
+
+    html,
+    body {
+        width: 100%;
+        min-height: 100%;
+        height: auto;
+        overflow-x: hidden;
+        overflow-y: auto !important;
+    }
+
+    body {
+        display: block;
+    }
+
+    .phone-container {
+        width: 100%;
+        max-width: 1100px;
+        height: auto;
+        min-height: 100vh;
+        max-height: none;
+        overflow: visible !important;
+        margin: 0 auto;
+        box-shadow: none;
+    }
+
+    .screen {
+        height: auto !important;
+        max-height: none !important;
+        min-height: calc(100vh - 36px);
+        overflow: visible !important;
+        flex: none !important;
+    }
+
+    #screen-feed {
+        overflow: visible !important;
+    }
+
+    #feed-container {
+        overflow: visible !important;
+    }
+
+    .post-image {
+        max-width: 100%;
+    }
+
+    .bottom-nav {
+        position: fixed !important;
+        left: 50%;
+        bottom: 0;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 1100px;
+        z-index: 1000;
+    }
+
+  }
