@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixabowl</title>
+
+    <!-- Firebase Standard JS SDKs (compat) -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-storage-compat.js"></script>
+
+    <link href="style.css?v=20260905-webapp-scrollfix2" rel="stylesheet" />
+</head>
+<body>
+   <div class="phone-container">
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <span>◇</span>
+            <span>📶 🔋</span>
+        </div>
+
+        <!-- Custom Alert -->
+        <div class="custom-alert" id="customAlert">
+            <div class="alert-box">
+                <p id="alertMessage">বার্তা</p>
+                <button class="alert-btn" onclick="closeAlert()">ঠিক আছে</button>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loadingSpinner">
+            <span>কানেক্ট হচ্ছে... ⏳</span>
+        </div>
+
+        <!-- 1. SIGN UP SCREEN -->
+        <div id="screen-signup" class="screen">
+            <div class="app-header">
+                <div></div>
+                <div class="logo">Pixabowl</div>
+                <div></div>
+            </div>
+            
+            <div class="auth-container">
+                <input type="file" id="signup-avatar-input" accept="image/*" style="display: none;" onchange="previewSignupAvatar(event)">
+                <div class="profile-picker-container" onclick="document.getElementById('signup-avatar-input').click()">
+                    <div class="profile-avatar-large" id="signup-avatar-preview">
+                        👤
+                    </div>
+                    <div class="camera-badge">📷</div>
+                </div>
+
+                <div class="input-group">
+                    <label>Full Name</label>
+                    <input type="text" id="signup-fullname" placeholder="Anondo Dash">
+                </div>
+
+                <div class="input-group">
+                    <label>Username</label>
+                    <input type="text" id="signup-username" placeholder="anondo.dash">
+                </div>
+
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" id="signup-email" placeholder="you@example.com">
+                </div>
+
+                <div class="input-group">
+                    <label>Bio</label>
+                    <input type="text" id="signup-bio" placeholder="A life waiting at your side">
+                </div>
+
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="signup-password" placeholder="Create Password">
+                </div>
+
+                <div class="rules-consent">
+                    <label class="rules-check">
+                        <input type="checkbox" id="signup-rules-checkbox" onchange="updateSignupButtonState()">
+                        <span>আমি Pixabowl-এর <button type="button" class="inline-link" onclick="openGuidelinesModal(event)">Community Guidelines</button> মেনে চলতে সম্মত।</span>
+                    </label>
+                </div>
+
+                <button class="btn-submit" id="btn-create-account" onclick="handleSignUp()" disabled>Create Account</button>
+                <span class="auth-toggle-link" onclick="toggleAuthScreen('screen-login')">Already have an account? Log In</span>
+            </div>
+        </div>
+
+        <!-- 2. LOGIN SCREEN -->
+        <div id="screen-login" class="screen">
+            <div class="app-header">
+                <div></div>
+                <div class="logo">Pixabowl</div>
+                <div></div>
+            </div>
+            
+            <div class="auth-container">
+                <div class="profile-avatar-large" style="margin-bottom: 25px;">👤</div>
+
+                <div class="input-group">
+                    <label>Username or Email</label>
+                    <input type="text" id="login-username" placeholder="username or you@example.com">
+                </div>
+
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="login-password" placeholder="•••••">
+                </div>
+
+                <button class="btn-submit" onclick="handleLogin()">Log In</button>
+                <div style="margin-top:10px; font-size:13px;">
+                    <a href="#" onclick="handleForgotPassword()">Forgot password?</a>
+                </div>
+                <span class="auth-toggle-link" onclick="toggleAuthScreen('screen-signup')">Don't have an account? Sign Up</span>
+            </div>
+        </div>
+
+        <!-- 3. PROFILE SCREEN -->
+        <div id="screen-profile" class="screen">
+            <div class="app-header">
+                <button class="icon-btn" onclick="handleLogout()" title="Logout">🚪</button>
+                <div class="logo">Pixabowl</div>
+                <button class="icon-btn">✕</button>
+            </div>
+
+            <div class="profile-header">
+                <div class="profile-top-row">
+                    <div class="profile-pic" id="profile-display-pic"></div>
+                    <div class="stats-row">
+                        <div class="stat-item">
+                            <div class="num" id="profile-post-count">0</div>
+                            <div class="label">Posts</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="num" id="profile-followers-count">0</div>
+                            <div class="label">Followers</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="num" id="profile-following-count">0</div>
+                            <div class="label">Following</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bio-section">
+                    <h3 id="profile-display-fullname">User Name</h3>
+                    <p id="profile-display-bio">Bio description</p>
+                </div>
+
+                <div style="padding: 10px 16px; display:flex; gap:8px; flex-wrap:wrap;">
+                    <button class="btn-submit" id="btn-edit-profile" style="width:auto; padding:8px 12px;" onclick="openEditProfileModal()">Edit Profile</button>
+                    <button class="btn-follow" id="btn-follow" style="display:none;" onclick="toggleFollowProfile()">Follow</button>
+                    <button class="btn-follow" id="btn-admin-panel" style="display:none;" onclick="openAdminPanel()">🛡️ Admin</button>
+                </div>
+                <div class="profile-guidelines-link">
+                    <button type="button" onclick="openGuidelinesModal()">📜 Community Guidelines</button>
+                </div>
+            </div>
+
+            <div class="grid-header">
+                <span style="font-size: 18px;">⊞</span>
+            </div>
+
+            <div class="photo-grid" id="profile-grid">
+                <!-- Grid photos loaded dynamically -->
+            </div>
+        </div>
+
+        <!-- 4. FEED SCREEN -->
+        <div id="screen-feed" class="screen">
+            <div class="app-header feed-header" style="flex-direction:column; align-items:stretch; gap:8px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; width:100%; padding:0 8px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div class="post-avatar" id="feed-header-avatar"></div>
+                        <div class="logo">Pixabowl</div>
+                    </div>
+                    <div>
+                        <button class="icon-btn">✕</button>
+                    </div>
+                </div>
+                <div class="feed-search-wrap" style="padding:0 12px 8px 12px;">
+                    <input id="feed-search-input" type="text" placeholder="Search username or #hashtag" style="width:100%; padding:8px; border-radius:20px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02); color:#fff;" oninput="onFeedSearchInput(event)" autocomplete="off">
+                    <div id="feed-search-results" class="feed-search-results" style="display:none;"></div>
+                </div>
+            </div>
+
+            <div id="feed-container">
+                <!-- Feed loaded dynamically -->
+            </div>
+            <div style="padding:12px; text-align:center;">
+                <button class="btn-submit" id="btn-load-more" onclick="loadMoreFeed()">Load more</button>
+            </div>
+            <div class="app-footer">
+                <button type="button" onclick="openGuidelinesModal()">📜 Community Guidelines</button>
+                <span>•</span>
+                <button type="button" onclick="showAlert('Pixabowl-এ নিরাপত্তা বা নীতিমালা ভঙ্গের সমস্যা হলে post-এর ⋮ menu থেকে Report করুন।')">⚠️ Safety & Reporting</button>
+            </div>
+        </div>
+
+        <!-- 5. ADMIN MODERATION SCREEN -->
+        <div id="screen-admin" class="screen">
+            <div class="app-header">
+                <button class="icon-btn" onclick="navigateToScreen('screen-profile')">‹</button>
+                <div class="logo">Moderation</div>
+                <button class="icon-btn" onclick="loadAdminReports()">↻</button>
+            </div>
+            <div style="padding:14px 16px;">
+                <div class="restriction-note">🛡️ শুধুমাত্র অনুমোদিত admin এই panel দেখতে পারবেন।</div>
+                <div id="admin-reports-container"><div class="empty-state">Reports load হচ্ছে...</div></div>
+            </div>
+        </div>
+
+        <!-- Report Modal -->
+        <div class="custom-alert" id="reportModal" style="display:none; align-items:flex-start; padding-top:70px;">
+            <div class="alert-box" style="max-width:380px; width:calc(100% - 32px);">
+                <h3 style="margin-bottom:6px;">Report Post</h3>
+                <p style="font-size:13px; opacity:.75; margin-bottom:12px;">কেন এই post-টি report করছেন?</p>
+                <select id="report-reason" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px;">
+                    <option value="spam">Spam / misleading</option>
+                    <option value="harassment">Harassment / bullying</option>
+                    <option value="hate">Hate / abusive content</option>
+                    <option value="sexual">Sexual / inappropriate content</option>
+                    <option value="violence">Violence / dangerous content</option>
+                    <option value="scam">Scam / fraud</option>
+                    <option value="other">Other</option>
+                </select>
+                <textarea id="report-details" rows="3" maxlength="500" placeholder="অতিরিক্ত তথ্য (ঐচ্ছিক)" style="width:100%; padding:10px; resize:vertical;"></textarea>
+                <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px;">
+                    <button class="alert-btn" onclick="closeReportModal()" style="background:#777;">Cancel</button>
+                    <button class="alert-btn" onclick="submitReport()">Report</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. CREATE POST SCREEN -->
+        <div id="screen-create" class="screen">
+            <div class="app-header">
+                <button class="icon-btn" onclick="navigateToScreen('screen-profile')">Cancel</button>
+                <div class="logo">Pixabowl</div>
+                <button class="icon-btn" style="color: #a872db; font-weight: bold;" onclick="publishPost()">Next</button>
+            </div>
+
+            <div class="create-post-container">
+                <div class="restriction-note">
+                    ⚠️ Pixabowl-এ শুধুমাত্র ছবি (Image) পোস্ট করা যাবে। ভিডিও ব্লক করা।
+                </div>
+
+                <input type="file" id="post-file-input" accept="image/png, image/jpeg, image/jpg, image/webp" style="display: none;" onchange="validateAndPreviewPostImage(event)">
+                
+                <div class="image-picker-box" onclick="document.getElementById('post-file-input').click()">
+                    <img id="post-image-preview" src="" style="display: none;">
+                    <div id="picker-placeholder" style="text-align: center; color: #a39bb0;">
+                        <div style="font-size: 32px; margin-bottom: 8px;">🖼️</div>
+                        <div>ছবি নির্বাচন করতে এখানে ট্যাপ করুন</div>
+                        <div style="font-size: 10px; color: #76688b; margin-top: 4px;">(ভিডিও সাপোর্ট করে না)</div>
+                    </div>
+                </div>
+
+                <input type="text" class="caption-input" id="caption-input" placeholder="Write a caption...">
+
+                <div class="tag-people-row" onclick="showAlert('ট্যাগিং ফিচার খুব শীঘ্রই আসছে!')">
+                    <span>Tag people</span>
+                    <span>›</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Profile Modal -->
+        <div class="custom-alert" id="editProfileModal" style="display:none; align-items:flex-start; padding-top:80px;">
+            <div class="alert-box" style="max-width:360px;">
+                <h3 style="margin-bottom:8px;">Edit Profile</h3>
+                <input type="file" id="edit-avatar-input" accept="image/*" style="display:none;" onchange="previewEditAvatar(event)">
+                <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
+                    <div class="profile-avatar-large" id="edit-avatar-preview" style="width:64px; height:64px; cursor:pointer;" onclick="document.getElementById('edit-avatar-input').click()">👤</div>
+                    <div style="flex:1;">
+                        <input type="text" id="edit-fullname" placeholder="Full name" style="width:100%; padding:8px; margin-bottom:8px;">
+                        <input type="text" id="edit-bio" placeholder="Bio" style="width:100%; padding:8px;">
+                    </div>
+                </div>
+                <div style="display:flex; gap:8px; justify-content:flex-end;">
+                    <button class="alert-btn" onclick="closeEditProfileModal()" style="background:#777;">Cancel</button>
+                    <button class="alert-btn" onclick="saveProfileEdits()">Save</button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Community Guidelines Modal -->
+        <div class="custom-alert guidelines-overlay" id="guidelinesModal" style="display:none;">
+            <div class="guidelines-box" role="dialog" aria-modal="true" aria-labelledby="guidelinesTitle">
+                <div class="guidelines-header">
+                    <div>
+                        <div class="guidelines-kicker">PIXABOWL COMMUNITY</div>
+                        <h2 id="guidelinesTitle">📜 Community Guidelines</h2>
+                    </div>
+                    <button type="button" class="guidelines-close" onclick="closeGuidelinesModal()" aria-label="Close">✕</button>
+                </div>
+
+                <div class="guidelines-content">
+                    <p class="guidelines-intro">
+                        Pixabowl একটি friendly photo-sharing community। সবাই যেন নিরাপদ ও সম্মানজনক পরিবেশে থাকতে পারে,
+                        সে জন্য নিচের নিয়মগুলো মেনে চলুন।
+                    </p>
+
+                    <div class="guideline-item">
+                        <div class="guideline-icon">🤝</div>
+                        <div><strong>অন্যকে সম্মান করুন</strong><p>Harassment, bullying, অপমান, হুমকি বা ইচ্ছাকৃতভাবে কাউকে হয়রানি করা যাবে না।</p></div>
+                    </div>
+                    <div class="guideline-item">
+                        <div class="guideline-icon">🚫</div>
+                        <div><strong>ক্ষতিকর বা সহিংস content নয়</strong><p>সহিংসতা, বিপজ্জনক কাজ বা অন্যের ক্ষতি করার উদ্দেশ্যে content পোস্ট করা যাবে না।</p></div>
+                    </div>
+                    <div class="guideline-item">
+                        <div class="guideline-icon">🔞</div>
+                        <div><strong>Inappropriate / sexual content নয়</strong><p>অশ্লীল, যৌনভাবে explicit বা গুরুতরভাবে inappropriate content নিষিদ্ধ।</p></div>
+                    </div>
+                    <div class="guideline-item">
+                        <div class="guideline-icon">🫶</div>
+                        <div><strong>Hate বা discrimination নয়</strong><p>কোনো ব্যক্তি বা গোষ্ঠীর বিরুদ্ধে hateful বা abusive content পোস্ট করবেন না।</p></div>
+                    </div>
+                    <div class="guideline-item">
+                        <div class="guideline-icon">🛑</div>
+                        <div><strong>Scam / fraud নয়</strong><p>প্রতারণা, phishing, scam বা ইচ্ছাকৃত misleading content পোস্ট করা যাবে না।</p></div>
+                    </div>
+                    <div class="guideline-item">
+                        <div class="guideline-icon">🔐</div>
+                        <div><strong>অন্যের privacy সম্মান করুন</strong><p>অনুমতি ছাড়া কারও ব্যক্তিগত তথ্য প্রকাশ বা ব্যবহার করবেন না।</p></div>
+                    </div>
+                    <div class="guideline-item">
+                        <div class="guideline-icon">🖼️</div>
+                        <div><strong>শুধু অনুমোদিত media ব্যবহার করুন</strong><p>Pixabowl-এ বর্তমানে image post করা যায়; video upload করা যায় না।</p></div>
+                    </div>
+                    <div class="guideline-item">
+                        <div class="guideline-icon">⚠️</div>
+                        <div><strong>সমস্যাজনক post Report করুন</strong><p>কোনো post এই নিয়ম ভাঙলে ⋮ menu থেকে Report করুন। নিজের হাতে অন্যের content সরানোর চেষ্টা করবেন না।</p></div>
+                    </div>
+
+                    <div class="guidelines-note">
+                        <strong>Moderation:</strong> Report করা content moderator/admin review করতে পারেন। নিয়ম ভঙ্গ হলে
+                        content remove বা account-এর বিরুদ্ধে উপযুক্ত ব্যবস্থা নেওয়া হতে পারে।
+                    </div>
+
+                    <p class="guidelines-version">
+                    Note: It's a fan made project. It's all creative content belongs to "An Elmwood trail" 's developer.<br>
+                    Community Guidelines · Version 1.0</p>
+                </div>
+
+                <button type="button" class="alert-btn guidelines-understand" onclick="closeGuidelinesModal()">আমি বুঝেছি</button>
+            </div>
+        </div>
+
+        <!-- BOTTOM NAV BAR -->
+        <div class="bottom-nav" id="bottomNav">
+            <button class="nav-item active" id="btn-nav-profile" onclick="navigateToScreen('screen-profile', this)">👤</button>
+            <button class="nav-item" id="btn-nav-feed" onclick="navigateToScreen('screen-feed', this)">📖</button>
+            <button class="nav-item" id="btn-nav-create" onclick="navigateToScreen('screen-create', this)">➕</button>
+        </div>
+    </div>
+
+<script src="script.js?v=20260905-webapp"></script>
+</body>
+</html>    
